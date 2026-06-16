@@ -82,7 +82,7 @@
             <div class="filter-panel">
                 <div class="search-wrapper">
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="search-input" placeholder="Search release notes by keyword (e.g. Gemini, partition)..." autocomplete="off">
+                    <input type="text" id="search-input" placeholder="Search release notes... (Press '/' to focus)" autocomplete="off">
                     <button id="clear-search-btn" class="clear-btn" style="display: none;">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -189,6 +189,11 @@
             </div>
         </div>
     </div>
+
+        <!-- Scroll to Top Button -->
+        <button id="scroll-to-top-btn" class="scroll-to-top-btn" title="Scroll to Top">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
 
     <!-- Main JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

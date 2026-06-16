@@ -35,6 +35,7 @@ const elements = {
     closeModalBtn: document.getElementById('close-modal-btn'),
     cancelTweetBtn: document.getElementById('cancel-tweet-btn'),
     publishTweetBtn: document.getElementById('publish-tweet-btn'),
+    scrollToTopBtn: document.getElementById('scroll-to-top-btn'),
     
     // Stat chips
     statAll: document.getElementById('stat-all').querySelector('.stat-count'),
@@ -137,6 +138,41 @@ function setupEventListeners() {
     
     elements.tweetText.addEventListener('input', (e) => {
         updateCharCount(e.target.value);
+    });
+
+    // Scroll to Top Button Events
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            elements.scrollToTopBtn.classList.add('visible');
+        } else {
+            elements.scrollToTopBtn.classList.remove('visible');
+        }
+    });
+
+    elements.scrollToTopBtn.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+
+    // Keyboard Shortcuts Listener
+    document.addEventListener('keydown', (e) => {
+        // '/' focuses search input
+        if (e.key === '/' && document.activeElement !== elements.searchInput && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            elements.searchInput.focus();
+            elements.searchInput.select();
+        }
+        // 'Escape' closes modal and blurs search
+        if (e.key === 'Escape') {
+            if (elements.tweetModal.classList.contains('active')) {
+                closeTweetModal();
+            }
+            if (document.activeElement === elements.searchInput) {
+                elements.searchInput.blur();
+            }
+        }
     });
 }
 
@@ -291,7 +327,7 @@ function renderNotes() {
                             </div>
                         </div>
                         <div class="card-body">
-                            ${item.body}
+                            ${highlightHTML(item.body, state.searchQuery)}
                         </div>
                     </div>
                 `;
@@ -592,6 +628,53 @@ function exportToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Highlight Search Results within HTML content safely
+function highlightHTML(html, query) {
+    if (!query) return html;
+    
+    // Create a temporary element to parse HTML
+    const template = document.createElement('div');
+    template.innerHTML = html;
+    
+    // TreeWalker to traverse text nodes
+    const walk = document.createTreeWalker(
+        template,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    const nodesToReplace = [];
+    let node;
+    while (node = walk.nextNode()) {
+        const text = node.nodeValue;
+        const lowerText = text.toLowerCase();
+        if (lowerText.includes(query)) {
+            nodesToReplace.push(node);
+        }
+    }
+    
+    nodesToReplace.forEach(textNode => {
+        const text = textNode.nodeValue;
+        const parent = textNode.parentNode;
+        
+        // Escape query regex chars
+        const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(`(${escapedQuery})`, 'gi');
+        
+        const span = document.createElement('span');
+        span.innerHTML = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+        
+        // Replace textNode with the span's child elements
+        while (span.firstChild) {
+            parent.insertBefore(span.firstChild, textNode);
+        }
+        parent.removeChild(textNode);
+    });
+    
+    return template.innerHTML;
 }
 
 
