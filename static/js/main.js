@@ -9,7 +9,7 @@ let state = {
 
 // DOM Elements
 const elements = {
-    themeToggleBtn: document.getElementById('theme-toggle-btn'),
+    themeCheckbox: document.getElementById('theme-checkbox'),
     exportCsvBtn: document.getElementById('export-csv-btn'),
     refreshBtn: document.getElementById('refresh-btn'),
     lastUpdatedTime: document.getElementById('last-updated-time'),
@@ -60,6 +60,11 @@ function setTheme(theme) {
     state.theme = theme;
     localStorage.setItem('theme', theme);
     
+    // Sync checkbox UI state
+    if (elements.themeCheckbox) {
+        elements.themeCheckbox.checked = (theme === 'light');
+    }
+    
     if (theme === 'dark') {
         document.body.classList.remove('light-theme');
         document.body.classList.add('dark-theme');
@@ -71,9 +76,9 @@ function setTheme(theme) {
 
 // Event Listeners Setup
 function setupEventListeners() {
-    // Theme Toggle
-    elements.themeToggleBtn.addEventListener('click', () => {
-        setTheme(state.theme === 'dark' ? 'light' : 'dark');
+    // Theme Switch
+    elements.themeCheckbox.addEventListener('change', (e) => {
+        setTheme(e.target.checked ? 'light' : 'dark');
     });
 
     // Export CSV Button
