@@ -10,6 +10,7 @@ let state = {
 // DOM Elements
 const elements = {
     themeToggleBtn: document.getElementById('theme-toggle-btn'),
+    exportCsvBtn: document.getElementById('export-csv-btn'),
     refreshBtn: document.getElementById('refresh-btn'),
     lastUpdatedTime: document.getElementById('last-updated-time'),
     cacheBadge: document.getElementById('cache-badge'),
@@ -74,6 +75,9 @@ function setupEventListeners() {
     elements.themeToggleBtn.addEventListener('click', () => {
         setTheme(state.theme === 'dark' ? 'light' : 'dark');
     });
+
+    // Export CSV Button
+    elements.exportCsvBtn.addEventListener('click', exportToCSV);
 
     // Refresh Button
     elements.refreshBtn.addEventListener('click', () => {
@@ -527,6 +531,62 @@ function showError(show) {
         elements.loadingState.style.display = 'none';
         elements.emptyState.style.display = 'none';
     }
+}
+
+// Export CSV Logic
+function escapeCSVValue(val) {
+    if (val === null || val === undefined) return '';
+    let formatted = val.toString().replace(/"/g, '""');
+    if (formatted.includes(',') || formatted.includes('\n') || formatted.includes('"')) {
+        formatted = `"${formatted}"`;
+    }
+    return formatted;
+}
+
+function exportToCSV() {
+    if (!state.notes || state.notes.length === 0) {
+        alert("No release notes available to export.");
+        return;
+    }
+
+    let csvContent = "Date,Type,Update Description\r\n";
+    let exportCount = 0;
+
+    state.notes.forEach(day => {
+        day.items.forEach(item => {
+            // Check filters
+            const typeMatches = state.activeFilter === 'all' || 
+                                item.type.toLowerCase() === state.activeFilter.toLowerCase();
+            const textToSearch = `${item.type} ${item.body} ${day.date}`.toLowerCase();
+            const searchMatches = !state.searchQuery || textToSearch.includes(state.searchQuery);
+            
+            if (typeMatches && searchMatches) {
+                const plainTextBody = stripHtml(item.body).trim();
+                csvContent += `${escapeCSVValue(day.date)},${escapeCSVValue(item.type)},${escapeCSVValue(plainTextBody)}\r\n`;
+                exportCount++;
+            }
+        });
+    });
+
+    if (exportCount === 0) {
+        alert("No release notes match the current filters to export.");
+        return;
+    }
+
+    // Download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filterSuffix = state.activeFilter !== 'all' ? `_${state.activeFilter.toLowerCase()}` : '';
+    link.setAttribute("download", `bigquery_release_notes_${dateStr}${filterSuffix}.csv`);
+    
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 
